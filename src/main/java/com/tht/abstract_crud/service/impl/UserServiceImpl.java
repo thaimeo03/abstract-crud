@@ -30,7 +30,13 @@ public class UserServiceImpl extends BaseListService<User, UserFilter> implement
 
   @Override
   public User save(CreateUserRequest user) {
-    User newUser = User.builder().username(user.getUsername()).build();
+    User newUser = User.builder()
+        .username(user.getUsername())
+        .fullName(user.getFullName())
+        .email(user.getEmail())
+        .phoneNumber(user.getPhoneNumber())
+        .address(user.getAddress())
+        .build();
 
     return userRepository.save(newUser);
   }
@@ -42,12 +48,14 @@ public class UserServiceImpl extends BaseListService<User, UserFilter> implement
     if (filter == null)
       return conditions;
 
-    conditions.add(new FilterCondition("status", FilterOperator.EQ, filter.getStatus(), null));
+    if (filter.getKeyword().length() > 0) {
+      conditions.add(new FilterCondition("fullName", FilterOperator.LIKE, filter.getKeyword(), null));
+    }
 
-    conditions.add(new FilterCondition("keyword", FilterOperator.LIKE, filter.getKeyword(), null));
-
-    conditions.add(new FilterCondition("createdAt", FilterOperator.BETWEEN, filter.getFromDate().atStartOfDay(),
-        filter.getToDate().atTime(23, 59, 59)));
+    if (filter.getFromDate() != null) {
+      conditions.add(new FilterCondition("createdAt", FilterOperator.BETWEEN, filter.getFromDate().atStartOfDay(),
+          filter.getToDate().atTime(23, 59, 59)));
+    }
 
     return conditions;
   }

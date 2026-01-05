@@ -9,10 +9,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.tht.abstract_crud.model.base.BaseListRequest;
 import com.tht.abstract_crud.model.user.User;
 import com.tht.abstract_crud.model.user.request.CreateUserRequest;
-import com.tht.abstract_crud.model.user.request.UserFilter;
+import com.tht.abstract_crud.model.user.request.GetUserListRequest;
 import com.tht.abstract_crud.service.UserService;
 
 import lombok.RequiredArgsConstructor;
@@ -32,7 +31,7 @@ public class UserController {
   }
 
   @GetMapping("/list")
-  public ResponseEntity<Object> getMethodName(@ModelAttribute BaseListRequest<UserFilter> request) {
+  public ResponseEntity<Object> findUsers(@ModelAttribute GetUserListRequest request) {
     Object response = userService.find(request);
 
     return ResponseEntity.status(HttpStatus.OK)

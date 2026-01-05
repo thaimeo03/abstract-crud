@@ -8,7 +8,6 @@ import lombok.Data;
 @Data
 public class UserFilter {
   private String keyword;
-  private Integer status;
   private LocalDate fromDate;
   private LocalDate toDate;
 }
