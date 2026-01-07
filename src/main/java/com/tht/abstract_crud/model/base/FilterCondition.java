@@ -13,5 +13,5 @@ public class FilterCondition {
   private String field;
   private FilterOperator operator;
   private Object value;
-  private Object valueTo; // Used for BETWEEN operator
+  private Object valueTo = null; // Used for BETWEEN operator
 }

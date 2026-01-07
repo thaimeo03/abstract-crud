@@ -20,10 +20,11 @@ import com.tht.abstract_crud.enums.Ordering;
 import com.tht.abstract_crud.enums.Paging;
 import com.tht.abstract_crud.model.base.BaseListRequest;
 import com.tht.abstract_crud.model.base.FilterCondition;
+import com.tht.abstract_crud.model.base.PageResponse;
 import com.tht.abstract_crud.utils.QueryDslPredicateBuilder;
 
 public abstract class BaseQueryDslListService<T, F, R> {
-  protected abstract JPAQueryFactory getQueryMethodFactory();
+  protected abstract JPAQueryFactory getQueryFactory();
 
   protected abstract List<FilterCondition> buildFilterConditions(F filter);
 
@@ -33,23 +34,16 @@ public abstract class BaseQueryDslListService<T, F, R> {
 
   protected abstract void applyJoin(JPAQuery<?> query);
 
-  public Page<R> find(BaseListRequest<F> request) {
+  public Object find(BaseListRequest<F> request) {
     BooleanBuilder predicate = QueryDslPredicateBuilder.build(getRoot(),
         this.buildFilterConditions(request.getFilter()));
 
-    JPAQuery<R> query = getQueryMethodFactory()
+    JPAQuery<R> query = getQueryFactory()
         .from(getRoot())
         .where(predicate)
         .select(buildSelect());
 
     applyJoin(query);
-
-    List<R> results = query.fetch();
-
-    if (request.getIsPaging().equalsIgnoreCase(Paging.YES.getCode())) {
-      query.offset(request.getPage() * request.getSize())
-          .limit(request.getSize());
-    }
 
     // Apply sort
     String sort = request.getSort();
@@ -58,11 +52,11 @@ public abstract class BaseQueryDslListService<T, F, R> {
       String[] orders = sort.split(";");
       for (String orderStr : orders) {
 
-        String[] orderParts = orderStr.trim().split(" ");
+        String[] orderParts = orderStr.trim().split(",");
         String field = orderParts[0];
         String direction = orderParts.length > 1 ? orderParts[1] : Ordering.DESC.getCode();
 
-        Order sortOrder = direction.equals(Ordering.DESC.getCode())
+        Order sortOrder = direction.equalsIgnoreCase(Ordering.DESC.getCode())
             ? Order.DESC
             : Order.ASC;
 
@@ -73,17 +67,20 @@ public abstract class BaseQueryDslListService<T, F, R> {
     }
 
     // Apply paging
-    long total = results.size();
-    Pageable pageable = buildPageable(request.getPage(), request.getSize());
+    List<R> results = query.fetch();
 
-    return new PageImpl<>(results, pageable, total);
-  }
+    if (request.getIsPaging().equalsIgnoreCase(Paging.YES.getCode())) {
+      query.offset(request.getPage() * request.getSize())
+          .limit(request.getSize());
 
-  // Helpers
-  protected Pageable buildPageable(Integer page, Integer size) {
-    int p = page != null ? page : 0;
-    int s = size != null ? size : 10;
+      long total = results.size();
+      Pageable pageable = PageRequest.of(request.getPage(), request.getSize());
 
-    return PageRequest.of(p, s);
+      Page<R> pageResult = new PageImpl<>(results, pageable, total);
+
+      return PageResponse.from(pageResult);
+    }
+
+    return results;
   }
 }

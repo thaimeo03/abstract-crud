@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.tht.abstract_crud.model.user.User;
 import com.tht.abstract_crud.model.user.request.CreateUserRequest;
 import com.tht.abstract_crud.model.user.request.GetUserListRequest;
+import com.tht.abstract_crud.service.UserDslService;
 import com.tht.abstract_crud.service.UserService;
 
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 public class UserController {
   private final UserService userService;
+  private final UserDslService userDslService;
 
   @PostMapping("")
   public ResponseEntity<User> createUser(@RequestBody CreateUserRequest userRequest) {
@@ -33,6 +35,14 @@ public class UserController {
   @GetMapping("/list")
   public ResponseEntity<Object> findUsers(@ModelAttribute GetUserListRequest request) {
     Object response = userService.find(request);
+
+    return ResponseEntity.status(HttpStatus.OK)
+        .body(response);
+  }
+
+  @GetMapping("/list2")
+  public ResponseEntity<Object> findUsers2(@ModelAttribute GetUserListRequest request) {
+    Object response = userDslService.find(request);
 
     return ResponseEntity.status(HttpStatus.OK)
         .body(response);
