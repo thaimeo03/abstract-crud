@@ -13,4 +13,6 @@ public interface UserService {
   User save(CreateUserRequest user);
 
   Object find(BaseListRequest<UserFilter> request);
+
+  User findById(Long id);
 }

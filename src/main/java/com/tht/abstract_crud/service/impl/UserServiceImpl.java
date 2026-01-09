@@ -24,6 +24,13 @@ public class UserServiceImpl extends BaseListService<User, UserFilter> implement
   private final UserRepository userRepository;
 
   @Override
+  public User findById(Long id) {
+    return userRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("User not found"));
+  }
+
+  // Find user list include paging
+  @Override
   public Optional<User> findByUsername(String username) {
     return userRepository.findByUsername(username);
   }

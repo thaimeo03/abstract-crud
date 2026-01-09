@@ -5,17 +5,22 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.querydsl.core.ResultTransformer;
+import com.querydsl.core.group.GroupBy;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.EntityPathBase;
+import com.querydsl.core.types.dsl.SimpleExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.tht.abstract_crud.enums.FilterOperator;
 import com.tht.abstract_crud.model.base.FilterCondition;
+import com.tht.abstract_crud.model.order.QOrder;
+import com.tht.abstract_crud.model.order.response.OrderInfo;
 import com.tht.abstract_crud.model.user.QUser;
 import com.tht.abstract_crud.model.user.User;
 import com.tht.abstract_crud.model.user.request.UserFilter;
-import com.tht.abstract_crud.model.user.response.UserAddress;
+import com.tht.abstract_crud.model.user.response.UserOrders;
 import com.tht.abstract_crud.service.UserDslService;
 import com.tht.abstract_crud.service.base.BaseQueryDslListService;
 
@@ -23,14 +28,17 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class UserDslServiceImpl extends BaseQueryDslListService<User, UserFilter, UserAddress>
+public class UserDslServiceImpl extends BaseQueryDslListService<User, UserFilter, UserOrders>
     implements UserDslService {
   private final JPAQueryFactory queryFactory;
 
   @Override
   protected void applyJoin(JPAQuery<?> query) {
-    // TODO Auto-generated method stub
+    QUser user = QUser.user;
+    QOrder order = QOrder.order;
 
+    query.distinct()
+        .leftJoin(order).on(order.user.eq(user));
   }
 
   @Override
@@ -53,14 +61,45 @@ public class UserDslServiceImpl extends BaseQueryDslListService<User, UserFilter
   }
 
   @Override
-  protected Expression<UserAddress> buildSelect() {
+  protected Expression<UserOrders> buildSelect() {
     QUser user = QUser.user;
-    return Projections.constructor(UserAddress.class, user.id, user.fullName, user.address);
+    QOrder order = QOrder.order;
+    return Projections.constructor(UserOrders.class,
+        user.id,
+        user.fullName,
+        user.address,
+        Projections.list(
+            Projections.constructor(OrderInfo.class,
+                order.id,
+                order.name,
+                order.price,
+                order.description)));
   }
 
   @Override
   protected EntityPathBase<User> getRoot() {
     return QUser.user;
+  }
+
+  @Override
+  protected SimpleExpression<?> getIdExpression() {
+    return QUser.user.id;
+  }
+
+  @Override
+  protected ResultTransformer<List<UserOrders>> getGroupByTransformer() {
+    QUser user = QUser.user;
+    QOrder order = QOrder.order;
+    return GroupBy.groupBy(user.id).list(
+        Projections.constructor(UserOrders.class,
+            user.id,
+            user.fullName,
+            user.address,
+            GroupBy.list(Projections.constructor(OrderInfo.class,
+                order.id,
+                order.name,
+                order.price,
+                order.description))));
   }
 
   @Override
