@@ -64,6 +64,7 @@ public class UserDslServiceImpl extends BaseQueryDslListService<User, UserFilter
   protected Expression<UserOrders> buildSelect() {
     QUser user = QUser.user;
     QOrder order = QOrder.order;
+
     return Projections.constructor(UserOrders.class,
         user.id,
         user.fullName,
@@ -90,6 +91,7 @@ public class UserDslServiceImpl extends BaseQueryDslListService<User, UserFilter
   protected ResultTransformer<List<UserOrders>> getGroupByTransformer() {
     QUser user = QUser.user;
     QOrder order = QOrder.order;
+
     return GroupBy.groupBy(user.id).list(
         Projections.constructor(UserOrders.class,
             user.id,
@@ -99,7 +101,7 @@ public class UserDslServiceImpl extends BaseQueryDslListService<User, UserFilter
                 order.id,
                 order.name,
                 order.price,
-                order.description))));
+                order.description).skipNulls())));
   }
 
   @Override

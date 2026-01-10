@@ -54,35 +54,17 @@ public abstract class BaseQueryDslListService<T, F, R> {
 
     applyJoin(baseQuery);
 
-    // Apply sort
-    String sort = request.getSort();
-    if (sort != null && sort.length() > 0) {
-      PathBuilder<?> pathBuilder = new PathBuilder<>(getRoot().getType(), getRoot().getMetadata());
-      String[] orders = sort.split(";");
-      for (String orderStr : orders) {
-
-        String[] orderParts = orderStr.trim().split(",");
-        String field = orderParts[0];
-        String direction = orderParts.length > 1 ? orderParts[1] : Ordering.DESC.getCode();
-
-        Order sortOrder = direction.equalsIgnoreCase(Ordering.DESC.getCode())
-            ? Order.DESC
-            : Order.ASC;
-
-        ComparableExpressionBase<?> expression = pathBuilder.getComparable(field, Comparable.class);
-
-        baseQuery.orderBy(new OrderSpecifier<>(sortOrder, expression));
-      }
-    }
-
     // Handle GroupBy / ID-based Pagination
     if (getGroupByTransformer() != null) {
       return findWithGroupBy(baseQuery, request);
     }
 
-    // Default Behavior
-    JPAQuery<R> query = (JPAQuery<R>) baseQuery.clone().select(buildSelect()); // Cast is safe if baseQuery structure
-                                                                               // matches
+    // Apply sort
+    String sort = request.getSort();
+    buildSort(baseQuery, sort);
+
+    // Apply select
+    JPAQuery<R> query = (JPAQuery<R>) baseQuery.clone().select(buildSelect());
 
     // Apply paging
     if (request.getIsPaging().equalsIgnoreCase(Paging.YES.getCode())) {
@@ -106,8 +88,11 @@ public abstract class BaseQueryDslListService<T, F, R> {
         throw new IllegalStateException("ID Expression must be provided for GroupBy pagination");
       }
 
-      // 1. Fetch Distinct IDs for the page
+      // Fetch Distinct IDs for the page
       long total = query.clone().select(idPath).distinct().fetch().size();
+
+      // Apply sort
+      buildSort(query, request.getSort());
 
       List<?> ids = query.clone()
           .select(idPath)
@@ -130,5 +115,27 @@ public abstract class BaseQueryDslListService<T, F, R> {
 
     // No Paging + GroupBy
     return query.transform(getGroupByTransformer());
+  }
+
+  private void buildSort(JPAQuery<?> query, String sort) {
+    if (sort.isBlank())
+      return;
+
+    PathBuilder<?> pathBuilder = new PathBuilder<>(getRoot().getType(), getRoot().getMetadata());
+    String[] orders = sort.split(";");
+    for (String orderStr : orders) {
+
+      String[] orderParts = orderStr.trim().split(",");
+      String field = orderParts[0];
+      String direction = orderParts.length > 1 ? orderParts[1] : Ordering.DESC.getCode();
+
+      Order sortOrder = direction.equalsIgnoreCase(Ordering.DESC.getCode())
+          ? Order.DESC
+          : Order.ASC;
+
+      ComparableExpressionBase<?> expression = pathBuilder.getComparable(field, Comparable.class);
+
+      query.orderBy(new OrderSpecifier<>(sortOrder, expression));
+    }
   }
 }
